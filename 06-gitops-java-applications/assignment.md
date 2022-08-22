@@ -73,7 +73,7 @@ cd $GIT_REPOS_HOME
 Clone the `quarkus-springboot-demo-gitops` repository and navigate to the same,
 
 ```shell
-git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/${QSBD_GITOPS_GIT_REPO}
+git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/quarkus-springboot-demo-gitops
 ```
 
 Navigate to the cloned repo directory
@@ -82,25 +82,25 @@ Navigate to the cloned repo directory
 cd quarkus-springboot-demo-gitops
 ```
 
+Check out the `instruqt` of the application,
+
+```shell
+git checkout instruqt
+```
+
 Enable the environment variables,
 
 ```shell
 direnv allow .
 ```
 
-Check out the `${QSBD_GITOPS_GIT_REV}` of the application,
-
-```shell
-git checkout -b ${QSBD_GITOPS_GIT_REV} origin/instruqt
-```
-
 GitOps
 ------
 
-Update the App helm `$APP_HOME/helm_vars/values.yaml`
+Update the App helm `$APP_GITOPS_HOME/helm_vars/values.yaml`
 
 ```shell
-envsubst < "$APP_HOME/helm_vars/values.tpl.yaml" > "$APP_HOME/helm_vars/values.yaml"
+envsubst < "$APP_GITOPS_HOME/helm_vars/values.tpl.yaml" > "$APP_GITOPS_HOME/helm_vars/values.yaml"
 ```
 
 Commit and push the code to git repo,
@@ -113,19 +113,81 @@ git push origin ${QSBD_GITOPS_GIT_REV}
 Deploy Argo CD application Kubernetes cluster that will use our GitOps repo,
 
 ```shell
-envsubst < $APP_HOME/app.yaml | kubectl apply -f -
+kustomize build $APP_GITOPS_HOME/k8s | envsubst  | kubectl apply -f -
 ```
 
-Open the **Argo CD** tab to watch the application getting synchronized and deployed on the Kubernetes cluster.
+Open the **Argo CD** tab and choose project `java-apps` from the filters.
+
+![Quarkus SpringBoot Demo App](../assets/qsbd_gitops_apps.png)
 
 Verify Application Deployment
 -----------------------------
 
+Let us check the pods on `demo-apps` namespace,
+
+```shell
+kubectl get pods -n demo-apps
+```
+
+The command should show an output like,
+
+```shell
+NAME                          READY   STATUS    RESTARTS   AGE
+fruits-api-55dcf4f9d7-sgwrq   1/1     Running   0          3m41s
+postgresql-75979fccb6-gqkwf   1/1     Running   0          3m41s
+```
+
+Let us check the services,
+
+```shell
+kubectl get svc -n demo-apps
+```
+
+The command should show an output like,
+
+```shell
+NAME         TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+fruits-api   ClusterIP   10.43.147.230   <none>        8080/TCP         4m51s
+postgresql   NodePort    10.43.7.161     <none>        5432:32416/TCP   4m51s
+```
+
+Let port-forward the service `fruits-api` allowing us to access the service from the CLI,
+
+```shell
+kubectl port-forward -n demo-apps svc/fruits-api 8080:8080 &
+```
+
+Let us call the simple greeting REST service,
+
+```shell
+http :8080/
+```
+
+The command should return a response like,
+
+```shell
+HTTP/1.1 200
+Connection: keep-alive
+Content-Length: 35
+Content-Type: text/plain;charset=UTF-8
+Date: Mon, 22 Aug 2022 09:06:15 GMT
+Keep-Alive: timeout=60
+
+Hello from Captain Canary!!🐥🚀
+```
+
+Run the following command and make a note of the image **sha256** digest,
+
+```shell
+kubectl get deploy -ndemo-apps  fruits-api -ojsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+> **NOTE**: It might take few seconds for the tag of the image to be refreshed with the sha256 digest.
 
 Updating Application
 --------------------
 
-Edit the application source `${QSBD_GIT_REPO}/src/main/java/com/example/hellospringboot/GreeterController.java` using the tab **Java App** and update the message from **"Hello from Captain Canary!!\uD83D\uDC25🚀";** to be like **"Captain Canary rocks with GitOps!!!\uD83D\uDC25🚀";**.
+Using the tab **Java App**, edit the application source `${QSBD_GIT_REPO}/src/main/java/com/example/hellospringboot/GreeterController.java` and update the message from **"Hello from Captain Canary!!\uD83D\uDC25🚀";** to be like **"Captain Canary rocks with GitOps!!!\uD83D\uDC25🚀";**.
 
 On **Terminal 2** navigate to `${QSBD_GIT_REPO}`,
 
@@ -140,11 +202,36 @@ git commit -m  "Lets do GitOps" "src/main/java/com/example/hellospringboot/Greet
 git push origin ${QSBD_GITOPS_GIT_REV}
 ```
 
-The action above should trigger a drone build as we saw in the earlier challenge. Once the build is successful you should see the updated image getting pushed to the registry.
+The action above should trigger a drone build as we saw in the earlier challenge. You can check the same buy shifting to **Drone** tab. Once the build is successful you should see the updated image getting pushed to the registry.
 
 Click open the `quarkus-springboot-demo` application on the Argo CD dashboard and watch the deploy, in few seconds it should start to sync with the latest image change i.e. the image that was pushed to the image repository earlier.  It if you verify the `values.yaml` file in the `${QSBD_GITOPS_GIT_REPO}`, it should now been updated to latest image revision.
 
-> **TIP**: Image revisions can be verified using their sha256 digests
+Run the following command and make a note of the image **sha256** digest of the updated app,
+
+```shell
+kubectl get deploy -ndemo-apps  fruits-api -ojsonpath='{.spec.template.spec.containers[0].image}'
+```
+
+The image digest in the earlier step and the one from above should be different.
+
+You can also verify the image and its digests using the **Nexus Repository Manager** tab,
+
+![Image Digests](../assets/qsbd_digests.png)
+
+Now try the same `http :8080/` request and you will see the following output,
+
+```shell
+HTTP/1.1 200
+Connection: keep-alive
+Content-Length: 43
+Content-Type: text/plain;charset=UTF-8
+Date: Mon, 22 Aug 2022 09:31:24 GMT
+Keep-Alive: timeout=60
+
+Captain Canary rocks with GitOps!!!🐥🚀
+```
+
+As used the [_Git write back_](https://argocd-image-updater.readthedocs.io/en/stable/configuration/applications/) method for updating the images, you will notice a new file called `.argocd-source-quarkus-springboot-demo.yaml` created under the app folder of the <http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/quarkus-springboot-demo-gitops> repository.
 
 Congratulations. You now successfully applied GitOps(Continuous Deployment) using Argo CD and integrated it with Drone CI to support with Continuous Integration.
 

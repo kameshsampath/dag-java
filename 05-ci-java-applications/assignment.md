@@ -83,7 +83,7 @@ direnv allow .
 Check out the `instruqt` of the application,
 
 ```shell
-git checkout -b instruqt origin/instruqt
+git checkout instruqt
 ```
 
 Reload the environment variables,
