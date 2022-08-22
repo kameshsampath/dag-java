@@ -1,14 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
+eval "$(direnv export bash)"
 
 set -euxo pipefail
 
-DAG_HOME=${DAG_HOME:-"$HOME/repos/dag-stack"}
+direnv allow .
 
 printf "\nUsing %s as the working directory for solving 'deploying-gitea 'challenge\n" "${DAG_HOME}"
 
 cd "$DAG_HOME"
 
-source "$DAG_HOME/.envrc"
+printf "DAG REPO:\n%s\n" "$GITEA_DAG_REPO"
 
 kubectl rollout status statefulsets.apps gitea --timeout=60s || fail-message "I expected an gitea statefulset"  
 
@@ -40,3 +41,5 @@ if [ "$ORIGIN_URL" != "${GITEA_DAG_REPO}" ];
 then
   fail-message "dag repository has wrong origin ${ORIGIN_URL} instead of ${GITEA_DAG_REPO}"  
 fi
+
+exit 0

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+eval "$(direnv export bash)"
+
+set -euxo pipefail
+
+direnv allow .
+
+echo "This is the check script"
+
+exit 0

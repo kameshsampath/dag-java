@@ -31,15 +31,23 @@ echo 'eval "$(direnv hook bash)"' >> /root/.bashrc
 curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
 chmod +x /usr/local/bin/argocd
 
+# crane
+go install github.com/google/go-containerregistry/cmd/crane@latest
+
 # Drone CLI
 curl -L https://github.com/harness/drone-cli/releases/latest/download/drone_linux_amd64.tar.gz | tar zx
 install -t /usr/local/bin drone
 
-## install podman cli
-apt install podman
+## install podman cli and net tools
+apt install -y podman-docker net-tools
 
-## install net-tools
-apt install net-tools
+# Add insecure registry
+cat > /etc/containers/registries.conf.d/myregistry.conf <<EOF
+[[registry]]
+location = "localhost:31081"
+insecure = true
+
+EOF
 
 ## envsubst
 envsubst --version
@@ -64,7 +72,6 @@ echo 'eval "$(starship init bash)"' >> /root/.bashrc
 
 # yq
 snap install yq
-
 
 mkdir -p "$HOME/repos"
 echo 'export GIT_REPOS_HOME="$HOME/repos"' >> /root/.bashrc

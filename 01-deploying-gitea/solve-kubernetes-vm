@@ -1,14 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+eval "$(direnv export bash)"
 
 set -euxo pipefail
 
-DAG_HOME=${DAG_HOME:-"$HOME/repos/dag-stack"}
+direnv allow .
 
 printf "\nUsing %s as the working directory for solving 'deploying-gitea 'challenge\n" "${DAG_HOME}"
 
 cd "$DAG_HOME"
-
-source "$DAG_HOME/.envrc"
 
 # Deploy Gitea
 helm repo add gitea-charts https://dl.gitea.io/charts/

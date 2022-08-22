@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+eval "$(direnv export bash)"
 
 set -euxo pipefail
 
-DAG_HOME=${DAG_HOME:-"$HOME/repos/dag-stack"}
+direnv allow .
 
-printf "\nUsing %s as the working directory for solving 'deploy-argocd' challenge\n" "${DAG_HOME}"
+printf "\nUsing %s as the working directory for checking 'deploying-argocd' challenge\n" "${DAG_HOME}"
 
 cd "$DAG_HOME"
-
-source "$DAG_HOME/.envrc"
 
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update

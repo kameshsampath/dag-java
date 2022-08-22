@@ -90,15 +90,13 @@ Now you can login to Gitea using Gitea tab using the user `user-01` and password
 
 ![Gitea Dashboard](../assets/gitea-user-dashboard.png)
 
-Create a new repository called `dag` under `user-01`. The `dag` will be the root  repository which will be used to do [declarative setup](https://argo-cd.readthedocs.io/en/stable/operator-manual/declarative-setup/) on Argo CD.
-
 Rename the existing remote to be `upstream`
 
 ```shell
 git remote rename origin upstream
 ```
 
-Add new remote to called `origin` to with url set to `${GITEA_URL}/user-01/dag.git`
+Add new remote to called `origin` to with url set to `${GITEA_URL}/user-01/dag-stack.git`
 
 ```shell
 git remote add origin "${GITEA_DAG_REPO}"
@@ -111,23 +109,16 @@ git remote -v
 ```
 
 ```text
-origin  ${GITEA_URL}/user-01/dag.git (fetch)
-origin  ${GITEA_URL}/user-01/dag.git (push)
+origin  ${GITEA_URL}/user-01/dag-stack.git (fetch)
+origin  ${GITEA_URL}/user-01/dag-stack.git (push)
 upstream        https://github.com/kameshsampath/dag-stack.git (fetch)
 upstream        https://github.com/kameshsampath/dag-stack.git (push)
 ```
 
-Configure Git user and email that will be used with all git commits,
+Push the current "${DAG_TARGET_VERSION}" branch to `origin`
 
 ```shell
-git config --global user.name 'user-01'
-git config --global user.email 'user-01@example.com'
-```
-
-Push the current code to `origin`
-
-```shell
-git push origin main
+git push origin "${DAG_TARGET_VERSION}"
 ```
 
 🏁 Finish

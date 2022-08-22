@@ -44,7 +44,7 @@ tabs:
 - title: Code
   type: code
   hostname: kubernetes-vm
-  path: /root/repos/dag-stack
+  path: /root/repos/dag-setup-verifier
 difficulty: basic
 timelimit: 28800
 ---
@@ -60,10 +60,13 @@ To activate the `dag-setup-verifier` repo in drone, run the following command
 drone repo enable user-01/dag-setup-verifier
 ```
 
-On Terminal 2 let us navigate to the work directory,
+Navigate to the git repositories home directory i.e. `$GIT_REPOS_HOME` using **Terminal 1** tab,
 
 ```shell
-cd "$DAG_HOME/work/dag-setup-verifier"
+cd $GIT_REPOS_HOME
+```
+
+```shell
 git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/dag-setup-verifier.git
 cd dag-setup-verifier
 ```
@@ -75,11 +78,22 @@ export DRONE_SERVER=http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30980
 export DRONE_TOKEN="your drone token from drone account settings page"
 ```
 
+> **TIP**: You can copy the .envrc.local from $GIT_REPOS_HOME/dag-stack.git, as we have already copied the token from drone account settings page.
+> ```shell
+> cp $GIT_REPOS_HOME/dag-stack/.envrc.local .
+> ```
+
 ```shell
 direnv allow .
 ```
 
-Edit `.drone.yml` using the code tab, ensure that `.drone.yml` updated to be like,
+Ensure our drone token works,
+
+```shell
+drone info
+```
+
+Edit `.drone.yml` using the **Code** tab, ensure that `.drone.yml` updated to be like,
 
 ```yaml
 ---
@@ -118,12 +132,20 @@ steps:
         from_secret: destination_image
 ```
 
+Add Secrets to Drone Repository
+-------------------------------
+
 As you notice we have `from_secrets` attributes in the `.drone.yml`.  Those are loaded using `drone_secrets`.
 
-Run the following commands to add those secrets to the `dag-setup-verifier` repo,
+Drone secrets are added using the `drone secret add` command, for e.g. to add the secret called `destination_image`,
 
 ```shell
 drone secret add --name destination_image --data "${REGISTRY_NAME}/example/dag-setup-verifier" "${DRONE_GIT_REPO}"
+```
+
+Run the following commands to add other secrets to the `dag-setup-verifier` repo,
+
+```shell
 
 drone secret add --name image_registry --data "${REGISTRY_NAME}" "${DRONE_GIT_REPO}"
 
@@ -138,6 +160,12 @@ Make sure the `mtu` value for the Docker plugin is set to right value in as per 
 
 ```shell
 ifconfig | grep cni
+```
+
+The command should show an output like,
+
+```shell
+cni0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1410
 ```
 
 Update the value as per the `mtu` value shown in the output of the command.

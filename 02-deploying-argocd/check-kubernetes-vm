@@ -1,14 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+eval "$(direnv export bash)"
 
 set -euxo pipefail
 
-DAG_HOME=${DAG_HOME:-"$HOME/repos/dag-stack"}
+direnv allow .
 
 printf "\nUsing %s as the working directory for checking 'deploying-argocd' challenge\n" "${DAG_HOME}"
 
 cd "$DAG_HOME"
-
-source "$DAG_HOME/.envrc"
 
 kubectl rollout status deployment -n argocd argocd-server --timeout=60s || fail-message "I expected an argocd-server deployment"
 

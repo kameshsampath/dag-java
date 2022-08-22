@@ -106,18 +106,6 @@ export DRONE_SERVER_URL="http://${DRONE_SERVER_HOST}"
 export GITEA_USER=user-01
 ```
 
-<!-- Verify we have the `${GITEA_HTTP_CLUSTER_IP}` variable set,
-
-```shell
-echo "${GITEA_HTTP_CLUSTER_IP}"
-```
-
-The cluster `${GITEA_HTTP_CLUSTER_IP}` should point to the `gitea-http` service cluster ip,
-
-```shell
-kubectl get svc -n default gitea-http
-``` -->
-
 Create Argo Apps
 ================
 
@@ -134,7 +122,6 @@ Commit and push the code to `${GITEA_DAG_REPO}`, so that values will be used by 
 ```shell
 git add "$DAG_HOME/helm_vars/dag/values.yaml"
 git commit -m "Deploy DAG App of Apps" "$DAG_HOME/helm_vars/dag/values.yaml"
-#TODO shall we make this as main branch in Gitea for workshop??
 git push origin instruqt
 ```
 
@@ -175,18 +162,20 @@ What we have done until now,
 Add Drone Admin User
 ====================
 
-Copy the account settings named `Example CLI Usage` from the Drone Account Settings page and update the `$DAG_HOME/.envrc`.
+From the account settings named `Example CLI Usage` from the Drone Account Settings page,
 
-![Drone Account Settings](../assets/drone_dashboard.png)
+![Drone Account Settings](../assets/drone_account_settings.png)
 
-Create a new file called `.envrc.local` and add the following variables to it,
+Copy the values,
 
 ```shell
 export DRONE_SERVER="drone server as listed in the drone account settings page"
 export DRONE_TOKEN="token from the drone account settings page"
 ```
 
-Ensure to reload the updates,
+Using the **Code** tab edit the `dag-stack` project and create a file named `.envrc.local` with the values of `DRONE_SERVER` and `DRONE_TOKEN` copied and exported from the account setting page
+
+Ensure to reload the updated environment variables,
 
 ```shell
 direnv allow .
