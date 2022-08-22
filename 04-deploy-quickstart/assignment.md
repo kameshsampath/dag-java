@@ -71,6 +71,12 @@ git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/dag-setu
 cd dag-setup-verifier
 ```
 
+Use the `instruqt` branch,
+
+```shell
+git checkout instruqt
+```
+
 Edit the `.envrc.local` file to match your settings,
 
 ```shell
@@ -78,7 +84,7 @@ export DRONE_SERVER=http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30980
 export DRONE_TOKEN="your drone token from drone account settings page"
 ```
 
-> **TIP**: You can copy the .envrc.local from $GIT_REPOS_HOME/dag-stack.git, as we have already copied the token from drone account settings page.
+> **TIP**: You can copy the `.envrc.local` from `$GIT_REPOS_HOME/dag-stack.git`, as we have already copied the token from drone account settings page.
 > ```shell
 > cp $GIT_REPOS_HOME/dag-stack/.envrc.local .
 > ```
@@ -101,6 +107,7 @@ kind: pipeline
 type: kubernetes
 name: default
 
+# update this if you want to do arm64 build
 platform:
   os: linux
   arch: amd64
@@ -108,7 +115,7 @@ platform:
 # Trigger only main
 trigger:
   branch:
-  - main
+  - instruqt
 
 steps:
 
@@ -121,7 +128,7 @@ steps:
       insecure: true
       mtu: 1410
       build_args:
-        MAVEN_REPOS: "nexus=http://nexus.infra:8081/repository/maven-public/"
+        - "MAVEN_REPOS=nexus=http://nexus.infra:8081/repository/maven-public/"
       username:
         from_secret: image_registry_user
       password:
@@ -154,7 +161,7 @@ drone secret add --name image_registry_user --data "${IMAGE_REGISTRY_USER}" "${D
 drone secret add --name image_registry_password --data "${IMAGE_REGISTRY_PASSWORD}" "${DRONE_GIT_REPO}"
 ```
 
-> **TIP**: You can also use the scripts from $DAG_HOME/work/dag-setup-verifier/scripts/add-secrets.sh.
+> **TIP**: You can also use the scripts from `$DAG_HOME/work/dag-setup-verifier/scripts/add-secrets.sh`.
 
 Make sure the `mtu` value for the Docker plugin is set to right value in as per the environment,
 
@@ -174,7 +181,7 @@ Commit and push the code to see the build trigger,
 
 ```shell
 git commit --allow-empty -m "Verify Setup" -m "Verify Setup"
-git push origin main
+git push origin instruqt
 ```
 
 Check the build status in the Drone Dashboard,

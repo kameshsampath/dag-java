@@ -52,7 +52,15 @@ timelimit: 600
 👋 Introduction
 ===============
 
-To do GitOps we will be using [Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/).
+GitOps is a way of implementing Continuous Deployment for cloud native applications. It focuses on a developer-centric experience when operating infrastructure, by using tools developers are already familiar with, including Git and Continuous Deployment tools.
+
+The core idea of GitOps is having a Git repository that always contains declarative descriptions of the infrastructure currently desired in the production environment and an automated process to make the production environment match the described state in the repository. If you want to deploy a new application or update an existing one, you only need to update the repository - the automated process handles everything else. It’s like having cruise control for managing your applications in production.
+
+> GitOps: versioned CI/CD on top of declarative infrastructure. Stop scripting > and start shipping.
+>
+> — [Kelsey Hightower](https://twitter.com/kelseyhightower/status/953638870888849408)
+
+As part of this workshop we will be using [Argo CD](https://argo-cd.readthedocs.io/en/stable/user-guide/projects/) as our GitOps platform.
 
 Ensure Environment
 ===================
@@ -96,6 +104,9 @@ The cluster bootstrapping installs the core DAG stack applications ([App of Apps
 - Droner Runners
 - Artifactory as Maven Repository Manager
 
+Environment Variables
+---------------------
+
 Few environment variables that use to bootstrap as shown below, they are already set in your shell via `$DAG_HOME/.envrc`,
 
 ```shell
@@ -107,7 +118,7 @@ export GITEA_USER=user-01
 ```
 
 Create Argo Apps
-================
+----------------
 
 Update the DAG App `$DAG_HOME/helm_vars/dag/values.yaml` with values matching to the environment.
 
@@ -143,14 +154,14 @@ Trigger app sync
 argocd app sync dag-apps
 ```
 
-**NOTE**: The sync operation will take few minutes
+> **IMPORTANT**: The sync operation will take few minutes. Please wait for the sync to be complete before proceeding further.
 
 A successful Argo CD deployment of apps should look as shown below,
 
 ![ArgoCD Apps](../assets/dag_apps.png)
 
 Validate Drone Setup
-====================
+--------------------
 
 What we have done until now,
 
@@ -158,9 +169,10 @@ What we have done until now,
 - Setup `dag-apps` Argo CD that in turn setup
   - Drone Server
   - Drone Kube Runner
+  - Drone Docker Runner
 
 Add Drone Admin User
-====================
+--------------------
 
 From the account settings named `Example CLI Usage` from the Drone Account Settings page,
 
@@ -184,22 +196,50 @@ direnv allow .
 Run the drone command to verify we are able to use drone cli,
 
 ```shell
-drone info
+drone user ls
 ```
 
-The command above fails with `Unauthorised` message.
+As the current user `user-01` is not an admin, the command above fails with `client error 403: {"message":"Forbidden"}` message. The current user need to be an admin user to be able to perform few administrative tasks as part of other challenges.
+
+Edit the `.envrc.local` file and add the following environment variable,
+
+```shell
+export ENABLE_DRONE_ADMIN=true
+```
 
 Update the DAG App `$DAG_HOME/helm_vars/dag/values.yaml` with values matching to the environment,
 
 ```shell
-export ENABLE_DRONE_ADMIN=true
-envsubst < $DAG_HOME/helm_vars/dag/values.tpl.yaml > $DAG_HOME/helm_vars/dag/values.yaml
+envsubst < "$DAG_HOME/helm_vars/dag/values.tpl.yaml" > "$DAG_HOME/helm_vars/dag/values.yaml"
 ```
 
-In few seconds you could see Argo CD rollout update to `drone`. Running drone info again should display `user-01` and the email of the user `user-01@example.com`.
+Commit and push the code,
 
 ```shell
-drone info
+git commit -m "Enable Admin" "$DAG_HOME/helm_vars/dag/values.yaml"
+git push origin "${DAG_TARGET_VERSION}"
+```
+
+Go to the **Argo CD** tab and watch the "dag-apps", in few seconds you could see Argo CD rollout update to `drone` app.
+
+> **NOTE**: You can also click on refresh to see the updates.
+
+Running `drone user ls` command again now be successful and listing the only user `user-01`.
+
+```shell
+drone user ls
+```
+
+You can also verify of the `user-01` is an admin or not by running the command,
+
+```shell
+drone info --format "Admin: {{ .Admin }}"
+```
+
+The command should show an output like,
+
+```shell
+Admin: true
 ```
 
 🏁 Finish

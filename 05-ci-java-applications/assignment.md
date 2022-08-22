@@ -74,17 +74,13 @@ Navigate to the cloned repo directory
 cd quarkus-springboot-demo
 ```
 
-Load the environment variables,
-
-```shell
-direnv allow .
-```
-
 Check out the `instruqt` of the application,
 
 ```shell
 git checkout instruqt
 ```
+
+> **NOTE**: errors like _direnv: error /root/repos/quarkus-springboot-demo/.envrc is blocked. Run `direnv allow` to approve its content_ are expected and they are fixed by running `direnv allow .` as shown below.
 
 Reload the environment variables,
 
@@ -99,7 +95,7 @@ export DRONE_SERVER="http://kubernetes-vm.${_SANDBOX_ID}.instrqut.io:30980"
 export DRONE_TOKEN="drone token from the drone account settings page"
 ```
 
-> **TIP**: You can copy the .envrc.local from $GIT_REPOS_HOME/dag-stack.git, as we have already copied the token from drone account settings page.
+> **TIP**: You can copy the `.envrc.local` from `$GIT_REPOS_HOME/dag-stack.git`, as we have already copied the token from drone account settings page.
 > ```shell
 > cp $GIT_REPOS_HOME/dag-stack/.envrc.local .
 > ```
@@ -185,6 +181,11 @@ Now push the local modifications to the git.
 git commit -a -m "Init Pipeline"
 git push origin "${QSBD_GIT_REV}"
 ```
+
+> **NOTE**: If you see message _nothing to commit, working tree clean_, you can trigger a build with empty commit like:
+>```shell
+> git commit --allow-empty -m "Init Pipeline" -m "Init Pipeline"
+>```
 
 The git **push** event will trigger a build on Drone. Open the **Drone** tab and navigate to `quarkus-springboot-demo` to see the build running.
 

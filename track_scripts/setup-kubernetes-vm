@@ -49,6 +49,8 @@ location = "localhost:31081"
 insecure = true
 
 EOF
+# superess Docker CLI using podman message
+touch /etc/containers/nodocker
 
 ## envsubst
 envsubst --version
@@ -81,19 +83,25 @@ cd "$HOME/repos" || true
 git clone https://github.com/kameshsampath/dag-stack.git && \
   cd "$(basename "$_" .git)" || true
 
-#sed -i '2d' .envrc
-
 git checkout -b instruqt origin/instruqt
 
 direnv allow .
 
 #git config
-GITEA_USER='user-01'
-GITEA_USER_PASSWORD='user-01%40123'
-GITEA_DOMAIN="kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950"
+# GITEA_USER='user-01'
+# GITEA_USER_PASSWORD='user-01%40123'
+# GITEA_DOMAIN="kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950"
 git config --global user.name 'user-01'
 git config --global user.email 'user-01@example.com'
-git config credential.helper store
-echo "http://${GITEA_USER}:${GITEA_USER_PASSWORD}@${GITEA_DOMAIN}" > "$HOME/.git-credentials"
+# git config credential.helper store
+
+# repos=("dag-stack.git" "quarkus-springboot-demo.git" "quarkus-springboot-demo-gitops.git" "dag-setup-verifier.git" )
+
+# echo '' > ~/.git-credentials
+
+# for r in "${repos[@]}"
+# do
+# 	printf 'http://%s:%s@%s/%s\n' "${GITEA_USER}" "${GITEA_USER_PASSWORD}" "${GITEA_DOMAIN}" "$r" >> ~/.git-credentials
+# done
 
 set-workdir "$PWD"

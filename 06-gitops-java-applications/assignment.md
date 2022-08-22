@@ -182,12 +182,34 @@ Run the following command and make a note of the image **sha256** digest,
 kubectl get deploy -ndemo-apps  fruits-api -ojsonpath='{.spec.template.spec.containers[0].image}'
 ```
 
-> **NOTE**: It might take few seconds for the tag of the image to be refreshed with the sha256 digest.
+> **NOTE**: It might take few seconds for the tag of the image to be refreshed with the sha256 digest. You can also try doing **Hard Refresh** from the Argo CD Dashboard --> `quarkus-springboot-demo` app. That will update the application to the latest digest from the registry.
 
 Updating Application
 --------------------
 
-Using the tab **Java App**, edit the application source `${QSBD_GIT_REPO}/src/main/java/com/example/hellospringboot/GreeterController.java` and update the message from **"Hello from Captain Canary!!\uD83D\uDC25🚀";** to be like **"Captain Canary rocks with GitOps!!!\uD83D\uDC25🚀";**.
+Using the tab **Java App**, edit the application source `${QSBD_GIT_REPO}/src/main/java/com/example/hellospringboot/GreeterController.java` and update the class to as shown,
+
+```java
+package com.example.hellospringboot;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * GreeterController
+ */
+@RestController
+public class GreeterController {
+
+    @GetMapping
+    public String hello() {
+        return "Captain Canary rocks with GitOps!!!\uD83D\uDC25🚀";
+    }
+
+}
+```
+
+That is updating the message from  **Hello from Captain Canary!!\uD83D\uDC25🚀** to **Captain Canary rocks with GitOps!!!\uD83D\uDC25🚀**.
 
 On **Terminal 2** navigate to `${QSBD_GIT_REPO}`,
 
@@ -202,9 +224,9 @@ git commit -m  "Lets do GitOps" "src/main/java/com/example/hellospringboot/Greet
 git push origin ${QSBD_GITOPS_GIT_REV}
 ```
 
-The action above should trigger a drone build as we saw in the earlier challenge. You can check the same buy shifting to **Drone** tab. Once the build is successful you should see the updated image getting pushed to the registry.
+The action above should trigger a drone build. You can check the same by navigating to **Drone** dashboard. Once the build is successful you should see the updated image getting pushed to the registry.
 
-Click open the `quarkus-springboot-demo` application on the Argo CD dashboard and watch the deploy, in few seconds it should start to sync with the latest image change i.e. the image that was pushed to the image repository earlier.  It if you verify the `values.yaml` file in the `${QSBD_GITOPS_GIT_REPO}`, it should now been updated to latest image revision.
+Click open the `quarkus-springboot-demo` application on the Argo CD dashboard and watch the deploy, in few seconds it should start to sync with the latest image change i.e. the image that was pushed to the image repository via drone build.
 
 Run the following command and make a note of the image **sha256** digest of the updated app,
 
@@ -217,6 +239,12 @@ The image digest in the earlier step and the one from above should be different.
 You can also verify the image and its digests using the **Nexus Repository Manager** tab,
 
 ![Image Digests](../assets/qsbd_digests.png)
+
+As part of the rollout the earlier port-forward would have been killed. Let us do the port-forward again to the service `fruits-api`,
+
+```shell
+kubectl port-forward -n demo-apps svc/fruits-api 8080:8080 &
+```
 
 Now try the same `http :8080/` request and you will see the following output,
 
@@ -231,7 +259,33 @@ Keep-Alive: timeout=60
 Captain Canary rocks with GitOps!!!🐥🚀
 ```
 
-As used the [_Git write back_](https://argocd-image-updater.readthedocs.io/en/stable/configuration/applications/) method for updating the images, you will notice a new file called `.argocd-source-quarkus-springboot-demo.yaml` created under the app folder of the <http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/quarkus-springboot-demo-gitops> repository.
+As used the [_Git write back_](https://argocd-image-updater.readthedocs.io/en/stable/configuration/applications/) method for updating the images, you will notice a new file called `.argocd-source-quarkus-springboot-demo.yaml` created under the app folder of the `quarkus-springboot-demo-gitops` repository.
+
+Shift to `Terminal 1`,
+
+```shell
+git pull --rebase origin instruqt
+```
+
+Let us get the latest digest that has been applied to our manifests,
+
+```shell
+yq '.helm.parameters[1].value' app/.argocd-source-quarkus-springboot-demo.yaml
+```
+
+And now Let us get the latest digest from our private registry,
+
+```shell
+~/go/bin/crane digest localhost:31081/example/quarkus-springboot-demo
+```
+
+Finally let us get the sha256 from our deployment manifest,
+
+```shell
+kubectl get deploy -ndemo-apps  fruits-api -ojsonpath='{.spec.template.spec.containers[0].image}' | cut -d'@' -f2
+```
+
+The out of all the three commands i.e. the image sha256 digest, should be same.
 
 Congratulations. You now successfully applied GitOps(Continuous Deployment) using Argo CD and integrated it with Drone CI to support with Continuous Integration.
 
