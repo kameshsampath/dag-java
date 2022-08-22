@@ -41,7 +41,8 @@ install -t /usr/local/bin drone
 ## install podman cli and net tools
 apt install -y podman-docker net-tools
 
-# Add insecure registry
+# Add insecure registry, it will by default add the registry
+# that will be configured via private registry challenge
 cat > /etc/containers/registries.conf.d/myregistry.conf <<EOF
 [[registry]]
 location = "localhost:31081"

@@ -53,8 +53,8 @@ It is always a challenge to build Java applications for cloud i.e building a con
 
 Let us break that that myth and lean how we can use Drone CI to make the CI task of Java applications to much simpler and easier.
 
-Drone Configuration
-===================
+Setup Drone Pipeline
+====================
 
 Navigate to the git repositories home directory i.e. `$GIT_REPOS_HOME` using **Terminal 1** tab,
 
@@ -65,7 +65,7 @@ cd $GIT_REPOS_HOME
 Clone the `quarkus-springboot-demo(QSBD)` repository and navigate to the same,
 
 ```shell
-git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/${QSBD_GIT_REPO}
+git clone http://kubernetes-vm.${_SANDBOX_ID}.instruqt.io:30950/user-01/quarkus-springboot-demo.git
 ```
 
 Navigate to the cloned repo directory
@@ -74,10 +74,22 @@ Navigate to the cloned repo directory
 cd quarkus-springboot-demo
 ```
 
-Check out the `${QSBD_GIT_REV}` of the application,
+Load the environment variables,
 
 ```shell
-git checkout -b ${QSBD_GIT_REV} origin/instruqt
+direnv allow .
+```
+
+Check out the `instruqt` of the application,
+
+```shell
+git checkout -b instruqt origin/instruqt
+```
+
+Reload the environment variables,
+
+```shell
+direnv allow .
 ```
 
 Using the **Java App** tab edit the `quarkus-springboot-demo` project and  create a file `.envrc.local` with the following contents,
@@ -87,7 +99,10 @@ export DRONE_SERVER="http://kubernetes-vm.${_SANDBOX_ID}.instrqut.io:30980"
 export DRONE_TOKEN="drone token from the drone account settings page"
 ```
 
-> **TIP**: Copy `DRONE_SERVER`  and `DRONE_TOKEN` values from the Drone`user-01` account settings.
+> **TIP**: You can copy the .envrc.local from $GIT_REPOS_HOME/dag-stack.git, as we have already copied the token from drone account settings page.
+> ```shell
+> cp $GIT_REPOS_HOME/dag-stack/.envrc.local .
+> ```
 
 Refresh the local environment by running,
 
@@ -109,7 +124,7 @@ We need to activate the `quarkus-springboot-demo` in Drone, so that the git even
 Run the following command to activate the `quarkus-springboot-demo`,
 
 ```shell
-drone repo activate "${QSBD_GIT_REPO}"
+drone repo enable "${QSBD_GIT_REPO}"
 ```
 
 Add Secrets to Drone Repository
@@ -123,11 +138,26 @@ The application build uses few secrets namely,
 - `image_registry_user`: The Image registry username to authenticate.  Derived from environment variables `${IMAGE_REGISTRY_USER}`.
 - `image_registry_password`: The Image registry user password to be used while authentication authenticate. Derived from environment variables `${IMAGE_REGISTRY_PASSWORD}`.
 
-Run the following script to add the secrets to the Drone repo `${QUARKUS_SPRINGBOOT_DEMO_GIT_REPO}`,
+Run the following script to add the secrets to the Drone repo `${QSBD_GIT_REPO}`,
 
 ```shell
-./scripts/add-secrets.sh
+drone secret add --name maven_mirror_url --data 'http://nexus.infra:8081/repository/maven-public/' "${QSBD_GIT_REPO}"
+
+drone secret add --name destination_image --data "${REGISTRY_NAME}/example/quarkus-springboot-demo" "${QSBD_GIT_REPO}"
+
+drone secret add --name image_registry --data "${REGISTRY_NAME}" "${QSBD_GIT_REPO}"
+
+drone secret add --name image_registry_user --data "${IMAGE_REGISTRY_USER}" "${QSBD_GIT_REPO}"
+
+drone secret add --name image_registry_password --data "${IMAGE_REGISTRY_PASSWORD}" "${QSBD_GIT_REPO}"
 ```
+
+> TIP: you can also use the utility scripts from `./scripts` to add, update and delete scripts
+>```shell
+> ./scripts/add-secrets.sh
+>```
+
+![Drone Secrets](../assets/qsbd_drone_secrets.png)
 
 Update .drone.yml
 -----------------
@@ -138,7 +168,13 @@ Make sure the `mtu` value for the Docker plugin is set to right value in as per 
 ifconfig | grep cni
 ```
 
-Update the value as per the `mtu` value shown in the output of the command.
+The command should show an output like,
+
+```shell
+cni0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1410
+```
+
+Update the value as per the `mtu` value shown in the output of the command. In the output above the `mtu` value is `1410`.
 
 Trigger Pipeline
 ----------------
@@ -146,13 +182,19 @@ Trigger Pipeline
 Now push the local modifications to the git.
 
 ```shell
-git commit -a -m "Trigger build"
+git commit -a -m "Init Pipeline"
 git push origin "${QSBD_GIT_REV}"
 ```
 
-The git **push** event will trigger a build on Drone. Open the **Drone** tab and navigate to `quarkus-springboot-demo` to see the build running. The first build will take some time during java-build step as Apache Maven need to download the artifacts from Maven Central and cache them on to the local Nexus Repository Manager.
+The git **push** event will trigger a build on Drone. Open the **Drone** tab and navigate to `quarkus-springboot-demo` to see the build running.
 
-**TIP**: To test triggers you can also use git command like `git commit --allow-empty -m "Test Trigger" -m "Test Trigger"`
+![Successful Pipeline](../assets/qsbd_success.png)
+
+> **NOTE**:
+> The first build will take some time during java-build step as Apache Maven need to > download the artifacts from Maven Central and cache them on to the local Nexus Repository Manager.
+>
+>
+> **TIP**: To test triggers you can also use git command like `git commit --allow-empty -m "Test Trigger" -m "Test Trigger"`
 
 🏁 Finish
 =========
